@@ -1,208 +1,116 @@
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-/**
- * Génère un PDF à partir d'une facture
- * Format simple et lisible, adapté aux factures
- */
 export function genererPDF(facture) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 20;
+  const margin = 15;
   let yPos = margin;
 
-  // Fonction helper pour ajouter du texte avec gestion de la pagination
-  const addText = (text, x, y, options = {}) => {
-    const { fontSize = 12, fontStyle = 'normal', align = 'left', color = [0, 0, 0] } = options;
-    
-    doc.setFontSize(fontSize);
-    doc.setFont('helvetica', fontStyle);
-    doc.setTextColor(color[0], color[1], color[2]);
-    
-    if (align === 'center') {
-      const textWidth = doc.getTextWidth(text);
-      x = (pageWidth - textWidth) / 2;
-    } else if (align === 'right') {
-      const textWidth = doc.getTextWidth(text);
-      x = pageWidth - margin - textWidth;
-    }
-    
-    doc.text(text, x, y);
-    
-    return y + fontSize / 3;
+  // --- SOLUTION AU BUG DU SLASH (/) ---
+  // On formate manuellement le nombre pour éviter l'espace insécable buggé de jsPDF
+  const formatPrix = (montant) => {
+    if (!montant && montant !== 0) return "0 F";
+    return montant.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F";
   };
 
-  // En-tête avec informations entreprise
-  const entreprise = facture.entreprise || {};
+  // --- EN-TÊTE ---
+  doc.setFontSize(18);
+  doc.setTextColor(40, 40, 40);
+  doc.setFont('helvetica', 'bold');
+  doc.text(facture.entreprise.nom || '', margin, yPos);
   
-  if (entreprise.nom) {
-    yPos = addText(entreprise.nom, margin, yPos, {
-      fontSize: 24,
-      fontStyle: 'bold',
-      color: [37, 99, 235] // Bleu
-    });
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.setFont('helvetica', 'normal');
+  yPos += 7;
+  if (facture.entreprise.telephone) {
+    doc.text(`Tél: ${facture.entreprise.telephone}`, margin, yPos);
     yPos += 5;
   }
-
-  if (entreprise.adresse) {
-    yPos = addText(entreprise.adresse, margin, yPos, { fontSize: 10 });
-    yPos += 5;
-  }
-
-  if (entreprise.telephone) {
-    yPos = addText(`Tél: ${entreprise.telephone}`, margin, yPos, { fontSize: 10 });
-    yPos += 5;
-  }
-
-  if (entreprise.email) {
-    yPos = addText(`Email: ${entreprise.email}`, margin, yPos, { fontSize: 10 });
-    yPos += 5;
-  }
-
-  yPos += 10;
-
-  // Ligne de séparation
-  doc.setDrawColor(200, 200, 200);
+  
+  doc.setDrawColor(230);
   doc.line(margin, yPos, pageWidth - margin, yPos);
-  yPos += 10;
 
-  // Titre FACTURE
-  yPos = addText('FACTURE', margin, yPos, {
-    fontSize: 20,
-    fontStyle: 'bold'
-  });
-  yPos += 10;
-
-  // Numéro et date
-  yPos = addText(`N°: ${facture.numero}`, margin, yPos, { fontSize: 12, fontStyle: 'bold' });
-  yPos += 6;
+  // --- INFOS FACTURE ---
+  yPos += 12;
+  doc.setFontSize(14);
+  doc.setTextColor(0);
+  doc.text('FACTURE', margin, yPos);
   
-  const dateFacture = new Date(facture.date).toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  yPos = addText(`Date: ${dateFacture}`, margin, yPos, { fontSize: 12 });
-  yPos += 15;
+  doc.setFontSize(9);
+  doc.text(`N° : ${facture.numero}`, margin, yPos + 7);
+  const dateStr = new Date(facture.date).toLocaleDateString('fr-FR');
+  doc.text(`Date : ${dateStr}`, margin, yPos + 12);
 
-  // Tableau des produits
-  doc.setFillColor(245, 245, 245);
-  doc.rect(margin, yPos, pageWidth - 2 * margin, 8, 'F');
-  
-  yPos += 6;
-  addText('Produit', margin + 5, yPos, { fontSize: 10, fontStyle: 'bold' });
-  addText('Qté', pageWidth - 150, yPos, { fontSize: 10, fontStyle: 'bold', align: 'center' });
-  addText('Prix', pageWidth - 100, yPos, { fontSize: 10, fontStyle: 'bold', align: 'right' });
-  addText('Total', pageWidth - margin - 5, yPos, { fontSize: 10, fontStyle: 'bold', align: 'right' });
-  yPos += 8;
+  // --- TABLEAU (SANS DÉBORDEMENT) ---
+  const corpsTableau = facture.produits.map(p => [
+    p.nom,
+    p.quantite,
+    formatPrix(p.prixUnitaire),
+    formatPrix(p.total)
+  ]);
 
-  // Lignes de produits
-  facture.produits.forEach((produit) => {
-    // Vérifier si on doit ajouter une nouvelle page
-    if (yPos > doc.internal.pageSize.getHeight() - 40) {
-      doc.addPage();
-      yPos = margin;
-    }
-
-    // Nom du produit
-    const nomProduit = produit.nom.length > 30 
-      ? produit.nom.substring(0, 27) + '...' 
-      : produit.nom;
-    yPos = addText(nomProduit, margin + 5, yPos, { fontSize: 10 });
-    
-    // Description si présente
-    if (produit.description) {
-      const desc = produit.description.length > 35 
-        ? produit.description.substring(0, 32) + '...' 
-        : produit.description;
-      yPos = addText(desc, margin + 10, yPos, { fontSize: 8, color: [100, 100, 100] });
-    }
-
-    // Quantité, Prix, Total
-    const ligneY = yPos - (produit.description ? 10 : 5);
-    addText(produit.quantite.toString(), pageWidth - 150, ligneY, { 
-      fontSize: 10, 
-      align: 'center' 
-    });
-    addText(`${produit.prixUnitaire.toLocaleString()} ${facture.devise}`, 
-      pageWidth - 100, ligneY, { fontSize: 10, align: 'right' });
-    addText(`${produit.total.toLocaleString()} ${facture.devise}`, 
-      pageWidth - margin - 5, ligneY, { fontSize: 10, align: 'right', fontStyle: 'bold' });
-
-    yPos += 8;
+  autoTable(doc, {
+    startY: yPos + 20,
+    head: [['Produit', 'Qté', 'Prix Unitaire', 'Total']],
+    body: corpsTableau,
+    theme: 'grid',
+    headStyles: { 
+      fillColor: [245, 245, 245], // Gris très clair
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      halign: 'center',
+      fontSize: 9
+    },
+    styles: { 
+      fontSize: 8.5, 
+      cellPadding: 3,
+      lineColor: [230, 230, 230],
+      overflow: 'linebreak' // Empêche le texte de déborder, il va à la ligne
+    },
+    columnStyles: {
+      0: { cellWidth: 'auto' }, // Le produit prend la place restante
+      1: { halign: 'center', cellWidth: 15 },
+      2: { halign: 'right', cellWidth: 35 },
+      3: { halign: 'right', cellWidth: 35, fontStyle: 'bold' }
+    },
+    margin: { left: margin, right: margin },
+    didDrawPage: (data) => { yPos = data.cursor.y; }
   });
 
-  yPos += 5;
+  // --- TOTAUX (SANS ESPACE DE SIGNATURE) ---
+  let finalY = doc.lastAutoTable.finalY + 10;
+  const rightAlignX = pageWidth - margin;
 
-  // Ligne de séparation avant totaux
-  doc.setDrawColor(200, 200, 200);
-  doc.line(pageWidth - 80, yPos, pageWidth - margin, yPos);
-  yPos += 8;
-
-  // Totaux
-  addText('Sous-total:', pageWidth - 100, yPos, { fontSize: 12, align: 'right' });
-  addText(`${facture.sousTotal.toLocaleString()} ${facture.devise}`, 
-    pageWidth - margin - 5, yPos, { fontSize: 12, align: 'right', fontStyle: 'bold' });
-  yPos += 8;
-
-  if (facture.tva && facture.tva.taux > 0) {
-    addText(`TVA (${facture.tva.taux}%):`, pageWidth - 100, yPos, { fontSize: 12, align: 'right' });
-    addText(`${facture.tva.montant.toLocaleString()} ${facture.devise}`, 
-      pageWidth - margin - 5, yPos, { fontSize: 12, align: 'right', fontStyle: 'bold' });
-    yPos += 8;
+  // Sécurité saut de page
+  if (finalY > 270) {
+    doc.addPage();
+    finalY = 20;
   }
 
-  // Total général en grand
-  doc.setFillColor(37, 99, 235);
-  doc.rect(pageWidth - 100, yPos - 5, 80, 10, 'F');
-  
-  addText('TOTAL:', pageWidth - 95, yPos, { 
-    fontSize: 14, 
-    align: 'left', 
-    fontStyle: 'bold',
-    color: [255, 255, 255]
-  });
-  addText(`${facture.totalGeneral.toLocaleString()} ${facture.devise}`, 
-    pageWidth - margin - 5, yPos, { 
-    fontSize: 14, 
-    align: 'right', 
-    fontStyle: 'bold',
-    color: [255, 255, 255]
-  });
-  yPos += 15;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Sous-total:', rightAlignX - 50, finalY);
+  doc.text(formatPrix(facture.sousTotal), rightAlignX, finalY, { align: 'right' });
 
-  // Remarques si présentes
-  if (facture.remarques) {
-    yPos += 5;
-    doc.setDrawColor(200, 200, 200);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 10;
-    
-    addText('Remarques:', margin, yPos, { fontSize: 10, fontStyle: 'bold' });
-    yPos += 8;
-    
-    const remarques = doc.splitTextToSize(facture.remarques, pageWidth - 2 * margin);
-    remarques.forEach((line) => {
-      if (yPos > doc.internal.pageSize.getHeight() - 20) {
-        doc.addPage();
-        yPos = margin;
-      }
-      addText(line, margin, yPos, { fontSize: 10 });
-      yPos += 6;
-    });
-  }
+  finalY += 8;
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(0);
+  // Rectangle pour le TOTAL NET
+  doc.rect(rightAlignX - 55, finalY - 5, 55, 10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TOTAL NET', rightAlignX - 52, finalY + 2);
+  doc.text(formatPrix(facture.totalGeneral), rightAlignX - 2, finalY + 2, { align: 'right' });
 
-  // Pied de page
-  const totalPages = doc.internal.pages.length - 1;
-  for (let i = 1; i <= totalPages; i++) {
+  // --- PIED DE PAGE ---
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    addText(`Page ${i} / ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, {
-      fontSize: 8,
-      align: 'center',
-      color: [150, 150, 150]
-    });
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text(`Page ${i} / ${pageCount}`, pageWidth / 2, 288, { align: 'center' });
   }
 
-  // Télécharger le PDF
-  const fileName = `Facture_${facture.numero}_${new Date(facture.date).toISOString().split('T')[0]}.pdf`;
-  doc.save(fileName);
+  doc.save(`Facture_${facture.numero}.pdf`);
 }
