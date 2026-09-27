@@ -1,12 +1,11 @@
 import axios from 'axios';
 
 /**
- * Configuration axios pour toutes les requêtes API.
- * On utilise la variable d'environnement définie sur Render (VITE_API_URL).
- * Si elle n'est pas trouvée, on utilise localhost pour le développement.
+ * Configuration axios pour toutes les requêtes API
+ * Point d'entrée unique pour communiquer avec le backend
  */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -14,26 +13,25 @@ const api = axios.create({
 
 /**
  * Gestion des produits
- * Note : On ajoute /api devant chaque route pour correspondre au backend
  */
 export const produitsAPI = {
   // Récupérer tous les produits
-  getAll: () => api.get('/api/produits'),
+  getAll: () => api.get('/produits'),
   
   // Rechercher des produits (auto-complétion)
-  rechercher: (query) => api.get(`/api/produits/recherche?q=${encodeURIComponent(query)}`),
+  rechercher: (query) => api.get(`/produits/recherche?q=${encodeURIComponent(query)}`),
   
   // Produits récemment utilisés
-  getRecents: () => api.get('/api/produits/recents'),
+  getRecents: () => api.get('/produits/recents'),
   
   // Créer ou mettre à jour un produit
-  creer: (donnees) => api.post('/api/produits', donnees),
+  creer: (donnees) => api.post('/produits', donnees),
   
   // Mettre à jour un produit
-  mettreAJour: (id, donnees) => api.put(`/api/produits/${id}`, donnees),
+  mettreAJour: (id, donnees) => api.put(`/produits/${id}`, donnees),
   
   // Supprimer un produit
-  supprimer: (id) => api.delete(`/api/produits/${id}`)
+  supprimer: (id) => api.delete(`/produits/${id}`)
 };
 
 /**
@@ -41,16 +39,16 @@ export const produitsAPI = {
  */
 export const facturesAPI = {
   // Récupérer toutes les factures
-  getAll: () => api.get('/api/factures'),
+  getAll: () => api.get('/factures'),
   
   // Récupérer une facture par ID
-  getById: (id) => api.get(`/api/factures/${id}`),
+  getById: (id) => api.get(`/factures/${id}`),
   
   // Créer une nouvelle facture
-  creer: (donnees) => api.post('/api/factures', donnees),
+  creer: (donnees) => api.post('/factures', donnees),
   
   // Supprimer une facture
-  supprimer: (id) => api.delete(`/api/factures/${id}`)
+  supprimer: (id) => api.delete(`/factures/${id}`)
 };
 
 export default api;

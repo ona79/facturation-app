@@ -1,78 +1,110 @@
-# 📄 Application de Facturation
+# Application de Facturation
 
-Application web simple et intuitive pour générer des factures de paiement, optimisée pour mobile et PC.
+Solution web full-stack intuitive pour la création, le calcul et l'exportation de factures professionnelles en format PDF.
 
-## ✨ Fonctionnalités
+---
 
-- ✅ **Interface ultra simple** : Gros boutons, gros textes, icônes claires
-- ✅ **Gestion des produits** : Ajout, modification, suppression avec auto-complétion
-- ✅ **Calculs automatiques** : Total par produit et total général
-- ✅ **Produits récents** : Accès rapide en un clic
-- ✅ **Génération PDF** : Factures professionnelles en format PDF
-- ✅ **Historique** : Toutes les factures sauvegardées automatiquement
-- ✅ **Auto-sauvegarde** : Sauvegarde automatique dans localStorage
-- ✅ **Mobile-first** : Interface optimisée pour téléphone et PC
+## Sommaire
 
-## 🛠️ Technologies
+- [Présentation Général](#présentation-générale)
+- [Fonctionnalités Principales](#fonctionnalités-principales)
+- [Technologies Utilisées](#technologies-utilisées)
+- [Structure du Projet](#structure-du-projet)
+- [Prérequis et Installation](#prérequis-et-installation)
+- [Modèles de Données](#modèles-de-données)
+- [Endpoints de l'API REST](#endpoints-de-lapi-rest)
+- [Design et Expérience Utilisateur](#design-et-expérience-utilisateur)
+- [Guide d'Utilisation](#guide-dutilisation)
+- [Déploiement en Production](#déploiement-en-production)
+- [Licence](#licence)
+
+---
+
+## Présentation Générale
+
+L'**Application de Facturation** est une solution web clé en main conçue pour simplifier l'émission de factures pour les indépendants, petits commerçants et PME. Elle offre une interface réactive adaptée aux mobiles et ordinateurs de bureau, permettant une saisie rapide d'articles avec autocomplétion, le calcul automatique des totaux et de la TVA, la sauvegarde locale temporaire ainsi que la persistance sur base de données MongoDB.
+
+---
+
+## Fonctionnalités Principales
+
+- **Interface Simplifiée et Responsive** : Ergonomie claire avec typographie lisible et disposition adaptée aux écrans tactiles et de bureau.
+- **Gestion des Produits et Autocomplétion** : Suggestion dynamique des articles déjà enregistrés et suivi des produits fréquemment utilisés.
+- **Calculs Automatiques** : Calcul en temps réel des sous-totaux par ligne, de la TVA (optionnelle) et du total général.
+- **Génération PDF Client** : Exportation directe des factures sous forme de document PDF professionnel via `jsPDF`.
+- **Historique et Recherche** : Consultation et gestion de l'ensemble des factures sauvegardées en base de données.
+- **Sauvegarde Temporaire Hors-Ligne** : Conservation automatique du brouillon de facture en cours dans le `localStorage` du navigateur.
+
+---
+
+## Technologies Utilisées
 
 ### Backend
-- **Node.js** + **Express** : API REST
-- **MongoDB** : Base de données
-- **Mongoose** : ODM pour MongoDB
+- **Node.js** & **Express.js** : Serveur d'API REST
+- **MongoDB** : Base de données NoSQL pour le stockage des factures et produits
+- **Mongoose** : ODM (Object Data Modeling) pour MongoDB
+- **CORS** & **Dotenv** : Gestion de la sécurité cross-origin et des variables d'environnement
 
 ### Frontend
-- **React** (Hooks) : Framework UI
-- **Vite** : Build tool moderne
-- **Tailwind CSS** : Styles utilitaires
-- **React Router** : Navigation
-- **jsPDF** : Génération de PDFs
-- **Axios** : Requêtes HTTP
+- **React 18** : Bibliothéque d'interface utilisateur (Hooks)
+- **Vite** : Outil de construction (bundler) moderne et rapide
+- **Tailwind CSS** : Framework CSS utilitaire pour le style responsive
+- **React Router DOM v6** : Gestion de la navigation multi-pages
+- **jsPDF** : Génération côté client de fichiers PDF
+- **Axios** : Client HTTP pour interagir avec l'API backend
 
-## 📁 Structure du Projet
+---
 
-```
+## Structure du Projet
+
+```text
 facturation-app/
 ├── backend/
 │   ├── models/
-│   │   ├── Produit.js      # Modèle de données produit
-│   │   └── Facture.js       # Modèle de données facture
+│   │   ├── Produit.js      # Modèle de données pour les produits
+│   │   └── Facture.js      # Modèle de données pour les factures
 │   ├── routes/
-│   │   ├── produits.js      # Routes API produits
-│   │   └── factures.js      # Routes API factures
-│   ├── app.js               # Point d'entrée serveur
-│   └── package.json
+│   │   ├── produits.js     # Endpoints API pour les produits
+│   │   └── factures.js     # Endpoints API pour les factures
+│   ├── app.js              # Point d'entrée du serveur Express
+│   ├── package.json
+│   └── .env
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── FormulaireProduit.jsx  # Formulaire d'ajout produit
-│   │   │   └── LigneProduit.jsx       # Affichage ligne produit
+│   │   │   ├── FormulaireProduit.jsx  # Composant de saisie de produit
+│   │   │   └── LigneProduit.jsx       # Composant d'affichage d'article
 │   │   ├── pages/
-│   │   │   ├── Accueil.jsx            # Page d'accueil
-│   │   │   ├── Facture.jsx            # Page création facture
-│   │   │   └── Historique.jsx         # Page historique
+│   │   │   ├── Accueil.jsx            # Tableau de bord / accueil
+│   │   │   ├── Facture.jsx            # Module de création de facture
+│   │   │   └── Historique.jsx         # Consultation de l'historique
 │   │   ├── utils/
-│   │   │   ├── api.js                 # Configuration API
-│   │   │   └── pdfGenerator.js        # Génération PDF
-│   │   ├── App.jsx                    # Composant principal
-│   │   ├── main.jsx                   # Point d'entrée React
-│   │   └── index.css                  # Styles globaux
+│   │   │   ├── api.js                 # Configuration du client Axios
+│   │   │   └── pdfGenerator.js        # Moteur de génération PDF
+│   │   ├── App.jsx                    # Routage principal
+│   │   ├── main.jsx                   # Initialisation de React
+│   │   └── index.css                  # Styles globaux Tailwind CSS
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.js
 │   └── tailwind.config.js
 │
-└── README.md
+├── DEMARRAGE.md            # Guide de prise en main rapide
+├── SETUP_MONGODB.md        # Guide de configuration de la base MongoDB
+└── README.md               # Documentation générale du projet
 ```
 
-## 🚀 Installation
+---
 
-### Prérequis
-- Node.js (v18 ou supérieur)
-- MongoDB (local ou MongoDB Atlas) - **Voir [SETUP_MONGODB.md](SETUP_MONGODB.md) pour la configuration**
-- npm ou yarn
+## Prérequis et Installation
 
-### Backend
+### Prérequis Système
+- **Node.js** : Version 18 ou supérieure
+- **MongoDB** : Serveur local actif ou chaîne de connexion MongoDB Atlas (voir `SETUP_MONGODB.md`)
+- **Gestionnaire de paquets** : `npm` ou `yarn`
+
+### Configuration du Backend
 
 ```bash
 cd backend
@@ -85,49 +117,44 @@ PORT=3001
 FRONTEND_URL=http://localhost:5173
 EOF
 
-# ⚠️ IMPORTANT : Configurez MongoDB avant de démarrer
-# Voir SETUP_MONGODB.md pour les instructions détaillées
-
-# Démarrer le serveur
-npm start
-# ou en mode développement
+# Lancer le serveur en mode développement
 npm run dev
 ```
 
-Le backend sera accessible sur `http://localhost:3001`
+Le serveur backend est accessible à l'adresse `http://localhost:3001`.
 
-**📝 Note** : Si MongoDB n'est pas configuré, le serveur démarrera mais affichera un avertissement. Consultez [SETUP_MONGODB.md](SETUP_MONGODB.md) pour résoudre ce problème.
-
-### Frontend
+### Configuration du Frontend
 
 ```bash
 cd frontend
 npm install
 
-# Démarrer le serveur de développement
+# Lancer le serveur de développement Vite
 npm run dev
 ```
 
-Le frontend sera accessible sur `http://localhost:5173`
+L'application web est accessible à l'adresse `http://localhost:5173`.
 
-## 📊 Schéma de Base de Données
+---
 
-### Produit
+## Modèles de Données
+
+### Schéma Produit (`Produit`)
 ```javascript
 {
-  nom: String (requis, indexé),
-  prixUnitaire: Number (requis, min: 0),
-  description: String (optionnel),
-  nbUtilisations: Number (défaut: 1),
-  derniereUtilisation: Date (défaut: maintenant)
+  nom: String,                // Requis, indexé pour recherche textuelle
+  prixUnitaire: Number,       // Requis, valeur minimale: 0
+  description: String,        // Optionnel
+  nbUtilisations: Number,     // Par défaut: 1 (compteur de popularité)
+  derniereUtilisation: Date   // Par défaut: Date courante
 }
 ```
 
-### Facture
+### Schéma Facture (`Facture`)
 ```javascript
 {
-  numero: String (requis, unique, format: FACT-YYYYMMDD-XXXX),
-  date: Date (requis, défaut: maintenant),
+  numero: String,             // Requis, unique (Format: FACT-YYYYMMDD-XXXX)
+  date: Date,                 // Requis, par défaut: Date courante
   entreprise: {
     nom: String,
     logo: String,
@@ -142,117 +169,82 @@ Le frontend sera accessible sur `http://localhost:5173`
     description: String,
     total: Number
   }],
-  sousTotal: Number,
+  sousTotal: Number,          // Somme des totaux des lignes
   tva: {
-    taux: Number (défaut: 0),
-    montant: Number (défaut: 0)
+    taux: Number,             // Taux de TVA en pourcentage
+    montant: Number           // Montant calculé de la TVA
   },
-  totalGeneral: Number,
-  devise: String (défaut: "FCFA"),
-  remarques: String
+  totalGeneral: Number,       // Sous-total + Montant TVA
+  devise: String,             // Par défaut: "FCFA"
+  remarques: String           // Notes ou conditions particulières
 }
 ```
 
-## 🎨 Design & UX
+---
 
-### Principes
-- **Mobile-first** : Interface conçue d'abord pour mobile
-- **Gros éléments** : Boutons et textes de taille importante
-- **Icônes claires** : Emojis et symboles pour navigation intuitive
-- **Peu de texte** : Messages courts et simples
-- **Feedback visuel** : Animations et transitions subtiles
+## Endpoints de l'API REST
 
-### Couleurs
-- Primary: Bleu (#2563eb)
-- Success: Vert (#10b981)
-- Danger: Rouge (#ef4444)
-- Background: Gris clair (#f9fafb)
+### API Produits (`/api/produits`)
 
-## 📱 Utilisation
+| Méthode | Route | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/produits` | Récupère la liste des produits (triés par utilisation) |
+| `GET` | `/api/produits/recherche?q=nom` | Recherche dynamique de produits par nom |
+| `GET` | `/api/produits/recents` | Liste des produits les plus fréquemment utilisés |
+| `POST` | `/api/produits` | Crée ou met à jour un produit existant |
+| `PUT` | `/api/produits/:id` | Modifie les informations d'un produit |
+| `DELETE` | `/api/produits/:id` | Supprime un produit du catalogue |
 
-### Créer une Facture
+### API Factures (`/api/factures`)
 
-1. Cliquer sur "Nouvelle Facture"
-2. Remplir les informations de l'entreprise (optionnel)
-3. Ajouter des produits :
-   - Utiliser les produits récents (accès rapide)
-   - Ou créer un nouveau produit avec le formulaire
-   - L'auto-complétion suggère les produits existants
-4. Vérifier les totaux (calculés automatiquement)
-5. Ajouter des remarques si nécessaire
-6. Cliquer sur "Générer et Sauvegarder"
-
-### Consulter l'Historique
-
-1. Cliquer sur "Historique"
-2. Voir toutes les factures créées
-3. Télécharger le PDF d'une facture
-4. Voir les détails d'une facture
-5. Supprimer une facture si nécessaire
-
-## 🔧 API Endpoints
-
-### Produits
-
-- `GET /api/produits` : Liste tous les produits
-- `GET /api/produits/recherche?q=nom` : Recherche produits
-- `GET /api/produits/recents` : Produits récemment utilisés
-- `POST /api/produits` : Crée/met à jour un produit
-- `PUT /api/produits/:id` : Met à jour un produit
-- `DELETE /api/produits/:id` : Supprime un produit
-
-### Factures
-
-- `GET /api/factures` : Liste toutes les factures
-- `GET /api/factures/:id` : Récupère une facture
-- `POST /api/factures` : Crée une nouvelle facture
-- `DELETE /api/factures/:id` : Supprime une facture
-
-## 🚢 Déploiement
-
-### Backend (ex: Heroku, Railway, Render)
-
-1. Créer un compte sur la plateforme
-2. Connecter votre repository
-3. Configurer les variables d'environnement :
-   - `MONGODB_URI` : URI de connexion MongoDB
-   - `PORT` : Port du serveur (généré automatiquement sur certaines plateformes)
-   - `FRONTEND_URL` : URL du frontend pour CORS
-
-### Frontend (ex: Vercel, Netlify)
-
-1. Créer un compte sur la plateforme
-2. Connecter votre repository
-3. Configurer :
-   - Build command: `npm run build`
-   - Output directory: `dist`
-   - Environment variables si nécessaire
-
-### MongoDB
-
-- **Local** : Installer MongoDB localement
-- **MongoDB Atlas** : Service cloud gratuit (recommandé)
-  1. Créer un compte sur mongodb.com
-  2. Créer un cluster gratuit
-  3. Récupérer l'URI de connexion
-  4. L'ajouter dans les variables d'environnement
-
-## 📝 Notes
-
-- Les factures en cours sont sauvegardées automatiquement dans `localStorage`
-- Les produits sont triés par utilisation récente pour faciliter l'accès
-- Le format PDF est simple et professionnel
-- L'application fonctionne hors ligne pour la création (avec localStorage)
-- La synchronisation avec le serveur se fait lors de la génération
-
-## 🤝 Contribution
-
-Ce projet est conçu pour être simple et maintenable. Les contributions sont les bienvenues !
-
-## 📄 Licence
-
-ISC
+| Méthode | Route | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/factures` | Récupère la liste de toutes les factures |
+| `GET` | `/api/factures/:id` | Récupère le détail d'une facture spécifique |
+| `POST` | `/api/factures` | Enregistre une nouvelle facture en base de données |
+| `DELETE` | `/api/factures/:id` | Supprime une facture enregistrée |
 
 ---
 
-**Développé avec ❤️ pour une facturation simple et accessible**
+## Design et Expérience Utilisateur
+
+L'application repose sur des principes d'ergonomie modernes :
+- **Conception Mobile-First** : Priorité donnée à la simplicité d'utilisation sur smartphone et tablette.
+- **Éléments Visuels Lisibles** : Boutons de grande taille et typographie claire facilitant la saisie.
+- **Feedback Immédiat** : Notification des actions et mise à jour dynamique des montants sans rechargement de page.
+
+---
+
+## Guide d'Utilisation
+
+### Création d'une Facture
+1. Naviguer vers **Nouvelle Facture**.
+2. Renseigner les coordonnées de l'émetteur (entreprise) si nécessaire.
+3. Ajouter des articles au panier via la recherche/autocomplétion ou les suggestions rapides.
+4. Ajuster les quantités et vérifier le calcul automatique des totaux.
+5. Indiquer le taux de TVA applicable et des remarques complémentaires si requis.
+6. Cliquer sur **Générer et Sauvegarder** pour enregistrer la facture et télécharger le document PDF.
+
+### Consultation de l'Historique
+1. Naviguer vers l'onglet **Historique**.
+2. Parcourir la liste chronologique des factures émise.
+3. Télécharger à nouveau le PDF d'une facture ou supprimer un enregistrement si besoin.
+
+---
+
+## Déploiement en Production
+
+### Backend (Render, Railway, Heroku)
+1. Déployer le dossier `backend/` sur votre hébergeur Node.js.
+2. Définir les variables d'environnement en production : `MONGODB_URI`, `PORT`, `FRONTEND_URL`.
+
+### Frontend (Vercel, Netlify)
+1. Déployer le dossier `frontend/`.
+2. Définir la commande de build (`npm run build`) et le dossier de sortie (`dist`).
+
+---
+
+## Licence
+
+Projet distribué sous licence **ISC**.
+
